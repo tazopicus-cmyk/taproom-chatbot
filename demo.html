@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taproom Chatbot — Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; }
+    
+    .demo-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    
+    .demo-header {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .demo-header h1 { font-size: 1.8rem; margin-bottom: 10px; }
+    .demo-header p { color: #666; }
+    
+    .chat-window {
+      width: 380px;
+      height: 500px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      overflow: hidden;
+    }
+    
+    .chat-header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      background: #e94560;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    
+    .chat-header-text h3 { font-size: 1rem; }
+    .chat-header-text p { font-size: 0.75rem; opacity: 0.8; }
+    
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    
+    .message.bot {
+      background: #f0f0f0;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    
+    .message.user {
+      background: #1a1a2e;
+      color: white;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+    
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .quick-reply {
+      background: #e8e8e8;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .quick-reply:hover { background: #1a1a2e; color: white; }
+    
+    .chat-input {
+      padding: 15px;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .chat-input input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 24px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    
+    .chat-input input:focus { border-color: #1a1a2e; }
+    
+    .chat-input button {
+      width: 40px;
+      height: 40px;
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+    
+    .chat-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #1a1a2e, #e94560);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+      font-size: 1.5rem;
+      color: white;
+      border: none;
+    }
+    
+    .hidden { display: none; }
+    
+    .chat-window.open { display: flex; }
+    .chat-toggle.closed { display: flex; }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <div class="demo-header">
+      <h1>🍺 Taproom Chatbot</h1>
+      <p>See how it works. Click the chat bubble to start.</p>
+    </div>
+  </div>
+
+  <button class="chat-toggle closed" id="chatToggle">💬</button>
+  
+  <div class="chat-window hidden" id="chatWindow">
+    <div class="chat-header">
+      <div class="chat-avatar">🍺</div>
+      <div class="chat-header-text">
+        <h3>Tin Dog Brewing</h3>
+        <p>Online</p>
+      </div>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot">
+        Hi there! 👋 I'm the Tin Dog taproom assistant. Ask me anything about the brewery!
+        <div class="quick-replies">
+          <button class="quick-reply" onclick="sendMessage('What beers are on tap?')">What's on tap?</button>
+          <button class="quick-reply" onclick="sendMessage('What are your hours?')">Hours?</button>
+          <button class="quick-reply" onclick="sendMessage('Are dogs allowed?')">Dogs allowed?</button>
+          <button class="quick-reply" onclick="sendMessage('Where are you located?')">Location?</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter')sendFromInput()">
+      <button onclick="sendFromInput()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    const chatToggle = document.getElementById('chatToggle');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatInput = document.getElementById('chatInput');
+    const chatMessages = document.getElementById('chatMessages');
+    
+    const responses = {
+      'what beers are on tap': "Right now we've got our West Coast IPA, a smooth Oatmeal Stout, a refreshing Hazy Pale Ale, and our seasonal Cherry Wheat. Check our website for the full list! 🍻",
+      'hours': "We're open Tuesday-Thursday 4-9pm, Friday 4-10pm, Saturday 12-10pm, and Sunday 12-6pm. Closed Monday!",
+      'dogs allowed': "Absolutely! We're dog-friendly in the outdoor patio. Water bowls provided! 🐕",
+      'location': "We're at 4523 Leary Way NW, Seattle WA 98107. Easy parking in back!",
+      'food': "We don't have a kitchen, but you're welcome to bring food or order delivery. Several great spots nearby!",
+      'events': "We host trivia every Wednesday at 7pm, live music Saturdays 8pm, and our monthly beer release parties!",
+      'default': "Great question! For detailed info, check our website or give us a call. Cheers! 🍺"
+    };
+    
+    chatToggle.addEventListener('click', () => {
+      chatWindow.classList.toggle('hidden');
+      chatToggle.classList.toggle('closed');
+    });
+    
+    function sendFromInput() {
+      const text = chatInput.value.trim();
+      if (text) sendMessage(text);
+    }
+    
+    function sendMessage(text) {
+      // Add user message
+      addMessage(text, 'user');
+      chatInput.value = '';
+      
+      // Simulate typing
+      setTimeout(() => {
+        const response = getResponse(text.toLowerCase());
+        addMessage(response, 'bot');
+      }, 500);
+    }
+    
+    function addMessage(text, sender) {
+      const div = document.createElement('div');
+      div.className = `message ${sender}`;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function getResponse(input) {
+      for (const key in responses) {
+        if (input.includes(key)) return responses[key];
+      }
+      return responses.default;
+    }
+  </script>
+</body>
+</html>
