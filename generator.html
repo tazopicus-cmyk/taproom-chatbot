@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taproom Chatbot — Generator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; color: white; min-height: 100vh; padding: 40px 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 10px; }
+    .subtitle { text-align: center; color: #888; margin-bottom: 40px; }
+    
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; color: #ccc; font-size: 0.9rem; }
+    input, textarea { width: 100%; padding: 12px 16px; background: #1a1a2e; border: 1px solid #333; border-radius: 8px; color: white; font-size: 1rem; }
+    input:focus, textarea:focus { outline: none; border-color: #e94560; }
+    textarea { min-height: 80px; resize: vertical; }
+    
+    .generate-btn { width: 100%; padding: 16px; background: #e94560; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 20px; }
+    .generate-btn:hover { background: #d6304b; }
+    
+    .output { margin-top: 40px; padding: 20px; background: #1a1a2e; border-radius: 12px; display: none; }
+    .output.show { display: block; }
+    .output h3 { margin-bottom: 15px; color: #10b981; }
+    .output pre { background: #0a0a14; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #aaa; }
+    .copy-btn { background: #006aff; margin-top: 15px; }
+    .copy-btn:hover { background: #0056e0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍺 Taproom Chatbot</h1>
+    <p class="subtitle">Fill in your brewery details to generate your widget</p>
+    
+    <form id="configForm">
+      <div class="form-group">
+        <label>Brewery Name *</label>
+        <input type="text" id="breweryName" placeholder="Tin Dog Brewing" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Address *</label>
+        <input type="text" id="address" placeholder="4523 Leary Way NW, Seattle WA 98107" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="phone" placeholder="(206) 555-0123">
+      </div>
+      
+      <div class="form-group">
+        <label>Website URL</label>
+        <input type="url" id="website" placeholder="https://tindogbrewing.com">
+      </div>
+      
+      <div class="form-group">
+        <label>Hours (one per line) *</label>
+        <textarea id="hours" placeholder="Tue-Thu: 4pm - 9pm&#10;Fri-Sat: 12pm - 10pm&#10;Sunday: 12pm - 6pm" required></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Tap List URL (optional)</label>
+        <input type="url" id="taplist" placeholder="https://untappd.com/brewery/yourbrewery">
+      </div>
+      
+      <div class="form-group">
+        <label>Custom Q&A (one per line, format: question | answer)</label>
+        <textarea id="customQA" placeholder="Do you allow dogs? | Yes! We're dog-friendly in the patio&#10;Do you have food? | No kitchen, but bring your own!&#10;Live music? | Saturdays at 8pm!"></textarea>
+      </div>
+      
+      <button type="submit" class="generate-btn">Generate Widget Code</button>
+    </form>
+    
+    <div class="output" id="output">
+      <h3>✅ Your Widget Code</h3>
+      <pre id="codeOutput"></pre>
+      <button class="generate-btn copy-btn" onclick="copyCode()">Copy Code</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('breweryName').value;
+      const address = document.getElementById('address').value;
+      const phone = document.getElementById('phone').value;
+      const website = document.getElementById('website').value;
+      const hours = document.getElementById('hours').value.replace(/\n/g, ', ');
+      const taplist = document.getElementById('taplist').value;
+      const customQA = document.getElementById('customQA').value;
+      
+      // Build custom Q&A object
+      let qaObj = '';
+      if (customQA) {
+        const lines = customQA.split('\n');
+        lines.forEach(line => {
+          const [q, a] = line.split('|');
+          if (q && a) {
+            qaObj += `      "${q.trim().toLowerCase()}": "${a.trim()}",\n`;
+          }
+        });
+      }
+      
+      const code = `<!-- Taproom Chatbot -->
+<style>
+.td-chat-toggle{position:fixed;bottom:20px;right:20px;width:60px;height:60px;background:linear-gradient(135deg,#e94560,#1a1a2e);border-radius:50%;cursor:pointer;box-shadow:0 5px 25px rgba(233,69,96,0.4);font-size:1.5rem;border:none;z-index:9999}
+.td-chat-window{position:fixed;bottom:90px;right:20px;width:360px;height:480px;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.2);display:none;flex-direction:column;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.td-chat-window.open{display:flex}
+.td-chat-header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:15px 20px;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:12px}
+.td-chat-avatar{width:36px;height:36px;background:#e94560;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.td-chat-header h3{font-size:1rem;margin:0}
+.td-chat-header p{font-size:0.7rem;margin:0;opacity:0.8}
+.td-chat-messages{flex:1;padding:15px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;background:#fafafa}
+.td-message{max-width:85%;padding:10px 14px;border-radius:18px;font-size:0.85rem;line-height:1.5}
+.td-message.bot{background:#f0f0f0;border-bottom-left-radius:4px}
+.td-message.user{background:#1a1a2e;color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+.td-quick-replies{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.td-quick-reply{background:#e8e8e8;padding:5px 10px;border-radius:15px;font-size:0.75rem;cursor:pointer;border:none}
+.td-quick-reply:hover{background:#1a1a2e;color:#fff}
+.td-chat-input{padding:12px;border-top:1px solid #eee;display:flex;gap:8px}
+.td-chat-input input{flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:20px;font-size:0.85rem;outline:none}
+.td-chat-input input:focus{border-color:#1a1a2e}
+.td-chat-input button{width:36px;height:36px;background:#e94560;color:#fff;border:none;border-radius:50%;cursor:pointer}
+@media(max-width:400px){.td-chat-window{width:calc(100vw - 40px);right:20px;left:20px}}
+</style>
+<button class="td-chat-toggle" onclick="document.getElementById('tdChat').classList.toggle('open')">💬</button>
+<div class="td-chat-window" id="tdChat">
+<div class="td-chat-header"><div class="td-chat-avatar">🍺</div><div><h3>${name}</h3><p>Online now</p></div></div>
+<div class="td-chat-messages" id="tdMessages"><div class="td-message bot">Hi! 👋 Ask me anything about ${name}!<div class="td-quick-replies"><button class="td-quick-reply" onclick="ask('hours')">Hours</button><button class="td-quick-reply" onclick="ask('location')">Location</button><button class="td-quick-reply" onclick="ask('dogs')">Dogs?</button>${taplist ? '<button class="td-quick-reply" onclick="ask(\'tap\')">Tap List</button>' : ''}</div></div></div>
+<div class="td-chat-input"><input type="text" id="tdInput" placeholder="Type a question..." onkeypress="if(event.key==='Enter')send()"><button onclick="send()">➤</button></div></div>
+<script>
+const answers={hours:"${hours}",location:"${address}",${qaObj}${taplist ? `tap:"Check our tap list: ${taplist}"` : ''}dog:"Yes! We're dog-friendly in the outdoor patio. Water bowls available! 🐕",food:"No kitchen, but you're welcome to bring food or order in!",default:"Great question! ${phone || 'Call us'} or visit ${website || 'our website'}"};
+function ask(q){document.getElementById('tdInput').value=q;send()}
+function send(){const i=document.getElementById('tdInput'),t=i.value.trim();if(!t)return;addMessage(t,'user'),i.value='',setTimeout(()=>{const k=Object.keys(a).find(k=>t.toLowerCase().includes(k));addMessage(a[k]||a.default,'bot')},400)}
+function addMessage(t,s){const d=document.createElement('div');d.className='td-message '+s;d.textContent=t;document.getElementById('tdMessages').appendChild(d);document.getElementById('tdMessages').scrollTop=9999}const a=answers;
+<\/script>`;
+
+      document.getElementById('codeOutput').textContent = code;
+      document.getElementById('output').classList.add('show');
+    });
+    
+    function copyCode() {
+      const code = document.getElementById('codeOutput').textContent;
+      navigator.clipboard.writeText(code);
+      alert('Code copied! Paste it into your website.');
+    }
+  </script>
+</body>
+</html>
